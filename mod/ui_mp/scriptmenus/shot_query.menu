@@ -1,0 +1,16 @@
+// Opened by the view script when saving, to learn whether the player's HUD is drawn: scripts can't read
+// a player's cvars. It answers through openScriptMenu, then closes at once.
+{
+	menuDef
+	{
+		name			"shot_query"
+		rect			0 0 640 480
+		fullscreen		0
+		onOpen
+		{
+			execNowOnDvarIntValue cg_draw2D 0 "openScriptMenu shot hud:0";
+			execNowOnDvarIntValue cg_draw2D 1 "openScriptMenu shot hud:1";
+			close shot_query;
+		}
+	}
+}

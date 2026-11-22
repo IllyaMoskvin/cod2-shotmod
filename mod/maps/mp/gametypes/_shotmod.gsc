@@ -7,14 +7,15 @@
 //   /set shot save NAME
 //   /set shot NAME
 //
-// A view holds where you are and where you look, and whether you're a spectator or playing. If
-// playing, it also holds your team, class, held weapon, stance and whether you aim down the sights.
-// Restoring changes only what differs, so the same shot can be restaged quickly. Several players
-// can each restore their own view to stage a shot together.
+// A view holds where you are and where you look, whether you're a spectator or playing, and
+// whether the HUD is drawn (cg_draw2D). If playing, it also holds your team, class, held weapon,
+// stance and whether you aim down the sights. Restoring changes only what differs, so the same shot
+// can be restaged quickly. Several players can each restore their own view to stage a shot together.
 //
-// Views live in scriptdata/shots.cfg, one per line:
-//   name,map,state,team,class,weapon,stance,ads,x,y,z,pitch,yaw,roll
-// Older lines with just name,map,state,x,y,z,pitch,yaw,roll still restore.
+// Views live in scriptdata/shotmod.cfg, one per line:
+//   name,map,state,team,class,weapon,stance,ads,x,y,z,pitch,yaw,roll,hud
+// Lines without hud leave the HUD alone, and lines with just name,map,state,x,y,z,pitch,yaw,roll
+// only restore where you are and where you look.
 // It's a CSV file named .cfg: with sv_pure 1, the game only reads loose .cfg and .menu files.
 // Saving appends a line; restoring uses the last line with that name.
 
@@ -25,6 +26,7 @@ init()
 	precacheMenu("shot_lower");
 	precacheMenu("shot_raise");
 	precacheMenu("shot_ads");
+	precacheMenu("shot_query");
 
 	level thread onPlayerConnect();
 	level thread hostCommands();
@@ -48,7 +50,9 @@ onMenuResponse()
 		if(menu != "shot")
 			continue;
 		args = split(response, ":");
-		if(args.size > 1 && args[0] == "save")
+		if(args.size > 1 && args[0] == "hud")
+			self.shotHud = args[1];  // shot_query's answer
+		else if(args.size > 1 && args[0] == "save")
 			self thread command("save", args[1]);
 		else if(args.size)
 			self thread command(args[0], undefined);
@@ -112,25 +116,26 @@ saveView(name)
 		if(self playerADS() > 0.5)
 			ads = 1;
 	}
+	hud = self queryHUD();
 	line = name + "," + getCvar("mapname") + "," + self.sessionstate + "," + team + "," + class + "," + weapon + "," + stance + "," + ads
-		+ "," + o[0] + "," + o[1] + "," + o[2] + "," + a[0] + "," + a[1] + "," + a[2];
+		+ "," + o[0] + "," + o[1] + "," + o[2] + "," + a[0] + "," + a[1] + "," + a[2] + "," + hud;
 
 	// A new file starts with a header row
-	f = openfile("shots.cfg", "read");
+	f = openfile("shotmod.cfg", "read");
 	if(f == -1)
 	{
-		f = openfile("shots.cfg", "write");
+		f = openfile("shotmod.cfg", "write");
 		if(f != -1)
-			fprintln(f, "name,map,state,team,class,weapon,stance,ads,x,y,z,pitch,yaw,roll");
+			fprintln(f, "name,map,state,team,class,weapon,stance,ads,x,y,z,pitch,yaw,roll,hud");
 	}
 	else
 	{
 		closefile(f);
-		f = openfile("shots.cfg", "append");
+		f = openfile("shotmod.cfg", "append");
 	}
 	if(f == -1)
 	{
-		self iprintln("shot: can't write scriptdata/shots.cfg");
+		self iprintln("shot: can't write scriptdata/shotmod.cfg");
 		return;
 	}
 	// fprintln writes its text and a comma, but no line break, so each record starts with one.
@@ -143,7 +148,7 @@ saveView(name)
 
 readView(name)
 {
-	f = openfile("shots.cfg", "read");
+	f = openfile("shotmod.cfg", "read");
 	if(f == -1)
 		return undefined;
 	view = undefined;
@@ -165,6 +170,12 @@ readView(name)
 			view["stance"] = fgetarg(f, 6);
 			view["ads"] = fgetarg(f, 7) == "1";
 			first = 8;
+			if(count > 14)
+			{
+				hud = fgetarg(f, 14);
+				if(hud == "0" || hud == "1")
+					view["hud"] = hud;
+			}
 		}
 		else
 			first = 3;
@@ -180,7 +191,7 @@ restoreView(name)
 	view = readView(name);
 	if(!isDefined(view))
 	{
-		self iprintln("shot: no view named " + name + " in scriptdata/shots.cfg");
+		self iprintln("shot: no view named " + name + " in scriptdata/shotmod.cfg");
 		return;
 	}
 	if(view["map"] != getCvar("mapname"))
@@ -190,6 +201,8 @@ restoreView(name)
 	}
 	self closeMenu();
 	self closeInGameMenu();
+	if(isDefined(view["hud"]))
+		self setClientCvar("cg_draw2D", view["hud"]);
 
 	if(view["state"] != "playing")
 	{
@@ -264,6 +277,23 @@ currentStance()
 	if(height > 40)
 		return "crouch";
 	return "prone";
+}
+
+queryHUD()
+{
+	// Scripts can't read a player's cvars, but a menu can test one and answer with openScriptMenu.
+	self.shotHud = undefined;
+	self openMenuNoMouse("shot_query");
+	for(i = 0; i < 20 && !isDefined(self.shotHud); i++)
+		wait 0.05;
+	self closeMenu();
+	self closeInGameMenu();
+	if(!isDefined(self.shotHud))
+	{
+		logPrint("shot: " + self.name + " didn't answer shot_query\n");
+		return "?";
+	}
+	return self.shotHud;
 }
 
 changeStance(target)
