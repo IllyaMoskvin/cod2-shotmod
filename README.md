@@ -25,7 +25,7 @@ This writes `zzz_shotmod.iwd` to the game's `main` folder. It holds:
 
 Every player needs the same `zzz_shotmod.iwd`: the server reads the scripts, and each player's game runs the menus. Installs of the same version are byte-identical, so players can install it themselves.
 
-### In a mod folder
+### Mod folder
 
 If you play with a mod folder (`+set fs_game mymod`), install into it instead:
 
@@ -33,15 +33,17 @@ If you play with a mod folder (`+set fs_game mymod`), install into it instead:
 python cod2_shotmod.py install "C:\Games\COD2\mymod"
 ```
 
-The mod folder's archives load after `main`'s, so `zzz_shotmod.iwd` wins there too. If the mod has its own `_callbacksetup.gsc`, the installer patches that one, so the mod keeps its changes.
+If the mod has its own `_callbacksetup.gsc`, the installer uses it as the base, so the mod keeps its changes. Otherwise, it'll look for the file in a `main` folder next to the mod folder.
 
-### Recompressed archives
+### Game folder elsewhere
 
-If your archives aren't stock (for example, recompressed by another tool), read the game script from a stock install:
+If the mod folder isn't next to the game's `main` folder, tell the installer where `main` is with `--main`:
 
 ```
-python cod2_shotmod.py install "D:\SmallBuild\main" --from "C:\Games\COD2\main"
+python cod2_shotmod.py install "D:\Code\mymod" --main "C:\Games\COD2\main"
 ```
+
+A mod's own `_callbacksetup.gsc` is still used as the base: it's the copy the game runs. `--main` also helps if the installer can't read your `main` archives, for example when another tool has recompressed them: point it at a stock install's `main` folder instead.
 
 ## Use
 
