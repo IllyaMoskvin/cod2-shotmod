@@ -1,0 +1,14 @@
+// The menu players name to send the view script a command: /openScriptMenu shot NAME
+// It's never shown: openScriptMenu only sends the response to the server.
+{
+	menuDef
+	{
+		name			"shot"
+		rect			0 0 640 480
+		fullscreen		0
+		onOpen
+		{
+			close shot;
+		}
+	}
+}

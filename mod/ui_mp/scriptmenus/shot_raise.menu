@@ -1,0 +1,15 @@
+// Opened by the view script to run "raisestance" on the player, then closes at once.
+// Scripts can't set stance or aim down the sights themselves.
+{
+	menuDef
+	{
+		name			"shot_raise"
+		rect			0 0 640 480
+		fullscreen		0
+		onOpen
+		{
+			exec "raisestance";
+			close shot_raise;
+		}
+	}
+}

@@ -1,0 +1,15 @@
+// Opened by the view script to run "toggleads" on the player, then closes at once.
+// Scripts can't set stance or aim down the sights themselves.
+{
+	menuDef
+	{
+		name			"shot_ads"
+		rect			0 0 640 480
+		fullscreen		0
+		onOpen
+		{
+			exec "toggleads";
+			close shot_ads;
+		}
+	}
+}

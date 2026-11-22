@@ -52,7 +52,7 @@ def install(main: Path, stock: Path) -> None:
         callbacks = callbacks.replace("\n", "\r\n")
     with zipfile.ZipFile(main / ARCHIVE, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr(CALLBACKS, callbacks.encode("latin-1"))
-        for path in sorted(MOD.rglob("*.gsc")):
+        for path in sorted(p for p in MOD.rglob("*") if p.is_file()):
             z.write(path, path.relative_to(MOD).as_posix())
     print(main / ARCHIVE)
     print(f"Views are saved in {main / 'scriptdata' / 'shots.cfg'}.")
