@@ -50,10 +50,13 @@ def install(main: Path, stock: Path) -> None:
     callbacks = callbacks.replace(ANCHOR, ANCHOR + HOOK)
     if crlf:
         callbacks = callbacks.replace("\n", "\r\n")
+    # A fixed timestamp makes every install of a version byte-identical: pure servers compare
+    # each player's archives with their own.
+    files = {CALLBACKS: callbacks.encode("latin-1")}
+    files.update({p.relative_to(MOD).as_posix(): p.read_bytes() for p in MOD.rglob("*") if p.is_file()})
     with zipfile.ZipFile(main / ARCHIVE, "w", zipfile.ZIP_DEFLATED) as z:
-        z.writestr(CALLBACKS, callbacks.encode("latin-1"))
-        for path in sorted(p for p in MOD.rglob("*") if p.is_file()):
-            z.write(path, path.relative_to(MOD).as_posix())
+        for name in sorted(files):
+            z.writestr(zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0)), files[name], zipfile.ZIP_DEFLATED)
     print(main / ARCHIVE)
     print(f"Views are saved in {main / 'scriptdata' / 'shots.cfg'}.")
 

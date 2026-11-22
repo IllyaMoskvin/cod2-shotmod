@@ -1,2 +1,3 @@
 *.bat text eol=crlf
 *.menu text eol=crlf
+*.gsc text eol=lf
